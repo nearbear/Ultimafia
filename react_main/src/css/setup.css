@@ -9,6 +9,20 @@
   background-color: #121212;
 }
 
+.setup .setup-name {
+  display: block;
+
+  line-height: 1em;
+  max-height: 3em;
+
+  display: -webkit-box;
+  line-clamp: 3;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+
+  overflow: hidden;
+}
+
 .popover .setup,
 .roleList {
   flex-flow: row wrap;
