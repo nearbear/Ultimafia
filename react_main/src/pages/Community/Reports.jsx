@@ -7,7 +7,7 @@ import {
   Card,
   Chip,
   FormControl,
-  Grid,
+  Grid2,
   InputLabel,
   MenuItem,
   Select,
@@ -134,19 +134,22 @@ export default function Reports() {
   }
 
   return (
-    <Box>
-      <Typography variant="h3" sx={{ mb: 2 }}>
+    <Paper sx={{
+      p: 2,
+    }}>
+      <Typography variant="h2" sx={{ mb: 2 }}>
         Reports
       </Typography>
 
       <Stack spacing={2} sx={{ mb: 2 }}>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={4}>
+        <Grid2 container spacing={2}>
+          <Grid2 size={{ xs: 12, sm: 4 }}>
             <FormControl fullWidth>
               <InputLabel>Status</InputLabel>
               <Select
                 value={statusFilter}
                 label="Status"
+                size="small"
                 onChange={(e) => {
                   setStatusFilter(e.target.value);
                   setPage(1);
@@ -158,8 +161,8 @@ export default function Reports() {
                 <MenuItem value="complete">Complete</MenuItem>
               </Select>
             </FormControl>
-          </Grid>
-          <Grid item xs={12} sm={4}>
+          </Grid2>
+          <Grid2 size={{ xs: 12, sm: 4 }}>
             <TextField
               fullWidth
               label="Assignee User ID"
@@ -169,8 +172,8 @@ export default function Reports() {
                 setPage(1);
               }}
             />
-          </Grid>
-          <Grid item xs={12} sm={4}>
+          </Grid2>
+          <Grid2 size={{ xs: 12, sm: 4 }}>
             <TextField
               fullWidth
               label="Reported User ID"
@@ -180,8 +183,8 @@ export default function Reports() {
                 setPage(1);
               }}
             />
-          </Grid>
-        </Grid>
+          </Grid2>
+        </Grid2>
       </Stack>
 
       <TableContainer component={Paper}>
@@ -306,6 +309,6 @@ export default function Reports() {
           />
         </Box>
       )}
-    </Box>
+    </Paper>
   );
 }

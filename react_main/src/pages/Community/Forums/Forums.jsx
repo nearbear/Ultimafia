@@ -5,7 +5,7 @@ import React, {
   useRef,
   useLayoutEffect,
 } from "react";
-import { NavLink, Routes, Route, Navigate } from "react-router-dom";
+import { Link, Routes, Route, Navigate } from "react-router-dom";
 import axios from "axios";
 import update from "immutability-helper";
 
@@ -14,96 +14,106 @@ import Board from "./Board";
 import Thread from "./Thread";
 import SearchResults from "./SearchResults";
 import ForumSearch from "./ForumSearch";
-import { useErrorAlert } from "../../../components/Alerts";
-import { UserContext } from "../../../Contexts";
-import { NameWithAvatar } from "../../User/User";
+import { Time } from "components/Basic";
+import { useErrorAlert } from "components/Alerts";
+import { ForumContext, UserContext } from "Contexts";
+import { NameWithAvatar } from "pages/User/User";
 
 import "css/forums.css";
 import {
+  Box,
   Divider,
   IconButton,
+  Link as MuiLink,
+  Paper,
   Popover,
   Stack,
   Typography,
   Button,
+  Breadcrumbs,
+  Card,
+  CardActionArea,
+  Grid2,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { usePopoverOpen } from "hooks/usePopoverOpen";
+import { useIsPhoneDevice } from "hooks/useIsPhoneDevice";
 
-export default function Forums() {
+function ForumProvider({ children }) {
   const [forumNavInfo, updateForumNavInfo] = useForumNavInfo();
-  const [searchDialogOpen, setSearchDialogOpen] = useState(false);
 
   return (
-    <div className="forums">
-      <ForumNav
-        forumNavInfo={forumNavInfo}
-        onSearchClick={() => setSearchDialogOpen(true)}
-      />
-      <Routes>
-        <Route
-          path="/"
-          element={<Categories updateForumNavInfo={updateForumNavInfo} />}
-        />
-        <Route
-          path="board/:boardId"
-          element={<Board updateForumNavInfo={updateForumNavInfo} />}
-        />
-        <Route
-          path="thread/:threadId"
-          element={<Thread updateForumNavInfo={updateForumNavInfo} />}
-        />
-        <Route
-          path="search"
-          element={<SearchResults updateForumNavInfo={updateForumNavInfo} />}
-        />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-      <ForumSearch
-        open={searchDialogOpen}
-        onClose={() => setSearchDialogOpen(false)}
-      />
-    </div>
+    <ForumContext.Provider value={{ forumNavInfo, updateForumNavInfo }}>
+      {children}
+    </ForumContext.Provider>
   );
 }
 
-function ForumNav(props) {
-  const forumNavInfo = props.forumNavInfo;
+export default function Forums() {
+  const [searchDialogOpen, setSearchDialogOpen] = useState(false);
 
   return (
-    <div className="span-panel">
-      <div className="forum-nav">
-        <div className="path">
-          <NavLink to="/community/forums">
-            <i className="fas fa-home home" />
+    <ForumProvider>
+      <Stack direction="column" spacing={1} className="forums">
+        <ForumNav
+          onSearchClick={() => setSearchDialogOpen(true)}
+        />
+        <Routes>
+          <Route path="/" element={<Categories />} />
+          <Route path="board/:boardId" element={<Board />} />
+          <Route path="thread/:threadId" element={<Thread />} />
+          <Route path="search" element={<SearchResults />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+        <ForumSearch
+          open={searchDialogOpen}
+          onClose={() => setSearchDialogOpen(false)}
+        />
+      </Stack>
+    </ForumProvider>
+  );
+}
+
+function ForumNav({ onSearchClick }) {
+  const { forumNavInfo } = useContext(ForumContext);
+
+  return (
+    <Paper elevation={2} sx={{
+      p: 1,
+    }}>
+      <Stack direction="row" spacing={1} sx={{
+        alignItems: "center",
+      }}>
+        <Breadcrumbs separator={<i className="fas fa-chevron-right" />} aria-label="breadcrumb">
+          <MuiLink component={Link} to="/community/forums">
+            <i className="fas fa-home home" style={{
+              marginRight: "calc(0.5*var(--mui-spacing))",
+            }} />
             Forums
-          </NavLink>
+          </MuiLink>
           {forumNavInfo.board && (
-            <NavLink to={`/community/forums/board/${forumNavInfo.board.id}`}>
-              <i className="fas fa-chevron-right separator" />
+            <MuiLink component={Link} to={`/community/forums/board/${forumNavInfo.board.id}`}>
               {forumNavInfo.board.name}
-            </NavLink>
+            </MuiLink>
           )}
           {forumNavInfo.thread && (
-            <NavLink to={`/community/forums/thread/${forumNavInfo.thread.id}`}>
-              <i className="fas fa-chevron-right separator" />
+            <MuiLink component={Link} to={`/community/forums/thread/${forumNavInfo.thread.id}`}>
               {forumNavInfo.thread.title}
-            </NavLink>
+            </MuiLink>
           )}
-        </div>
-        <div className="forum-nav-actions" style={{ marginLeft: "auto" }}>
+        </Breadcrumbs>
+        <div style={{ marginLeft: "auto" }}>
           <Button
-            onClick={props.onSearchClick}
+            onClick={onSearchClick}
             startIcon="🔎"
-            variant="text"
+            variant="outlined"
             size="small"
-            sx={{ color: "text.secondary" }}
           >
             Search
           </Button>
         </div>
-      </div>
-    </div>
+      </Stack>
+    </Paper>
   );
 }
 
@@ -139,6 +149,202 @@ function useForumNavInfo() {
 
     return newInfo || info;
   }, {});
+}
+
+export function ForumCard({
+  to,
+  actionContent,
+  middleContent,
+  recentReplies,
+  className=undefined,
+}) {
+  const isPhoneDevice = useIsPhoneDevice();
+
+  return (
+    <Card className={className} sx={{
+      overflow: "unset",
+    }}>
+      <Grid2 container sx={{
+        width: "100%",
+        height: "100%",
+        alignItems: "stretch",
+      }}>
+        <Grid2 size={{ xs: 12, sm: 3 }}>
+          <CardActionArea component={Link} variant="outlined" to={to}
+            sx={{
+              p: 1,
+              width: "100%",
+              height: "100%",
+              borderTopRightRadius: 0,
+              borderBottomRightRadius: 0,
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                backgroundColor: "primary.main",
+                opacity: "10%",
+              }
+            }}
+          >
+            {actionContent}
+          </CardActionArea>
+        </Grid2>
+        <Grid2 size={{ xs: 12, sm: 3 }}>
+          {middleContent}
+        </Grid2>
+        <Grid2 size={{ xs: 12, sm: 6 }}>
+          <ForumColumn title="Recent Replies" sx={{
+            flex: isPhoneDevice ? undefined : "2 1 0%",
+            minWidth: 0,
+          }}>
+            <Box sx={{
+              display: "grid",
+              gridTemplateColumns: isPhoneDevice ? "1fr" : `repeat(${recentReplies.length}, minmax(0, 1fr))`,
+              height: "100%",
+              gap: 1,
+            }}>
+              {recentReplies.length === 0 && (
+                <Typography sx={{ textAlign: "center" }}>
+                  No replies yet
+                </Typography>
+              )}
+              {recentReplies}
+            </Box>
+          </ForumColumn>
+        </Grid2>
+      </Grid2>
+    </Card>
+  )
+}
+
+export function ForumColumn({ children, title = null, sx={} }) {
+  return (
+    <Stack direction="column" sx={{
+      position: "relative",
+      px: 1,
+      pb: 1,
+      pt: "calc(0.5*(var(--mui-spacing) + 1em) + var(--mui-spacing))",
+      width: "100%",
+      height: "100%",
+      justifyContent: "center",
+      ...sx,
+    }}>
+      <Stack direction="row" sx={{
+        position: "absolute",
+        top: "0px",
+        left: "0px",
+        width: "100%",
+        justifyContent: "center",
+        transform: "translateY(-50%)"
+      }}>
+        <Paper elevation={4} sx={{
+          p: 0.5,
+          "&::before": {
+            position: "absolute",
+            content: '""',
+            top: "0px",
+            left: "0px",
+            background: ""
+          }
+        }}>
+          <Typography variant="h4" sx={{
+            lineHeight: "1",
+          }}>
+            {title}
+          </Typography>
+        </Paper>
+      </Stack>
+      {children}
+    </Stack>
+  );
+}
+
+export function ForumPost({ thread }) {
+  const linkTo = thread.thread ?
+    `/community/forums/thread/${thread.thread.id}?reply=${thread.id}` :
+    `/community/forums/thread/${thread.id}`;
+
+  return (
+    <Paper elevation={4} sx={{
+      alignSelf: "stretch",
+      width: "100%",
+      height: "100%",
+      maxWidth: "15em",
+    }}>
+      <MuiLink variant="h5" component={Link} className="mui-popover-title" to={linkTo} sx={{
+        display: "block",
+        width: "100%",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+      }}>
+        {thread.title || thread.thread?.title}
+      </MuiLink>
+      <Stack direction="column" spacing={0.5} sx={{
+        p: 0.5,
+      }}>
+        {thread.content && (<Typography variant="body2" sx={{
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          display: "-webkit-box",
+          WebkitLineClamp: 1,
+          WebkitBoxOrient: "vertical",
+          opacity: "0.75",
+        }}>
+          {thread.content}
+        </Typography>)}
+        <NameWithAvatar
+          id={thread.author.id}
+          name={thread.author.name}
+          avatar={thread.author.avatar}
+          vanityUrl={thread.author.vanityUrl}
+          subContent={
+            <Typography variant="caption">
+              <Time millisec={Date.now() - thread.postDate} suffix={" ago"} />
+            </Typography>
+          }
+        />
+        <Box sx={{
+          alignSelf: "flex-end",
+        }}>
+          <ForumPostFooter thread={thread} />
+        </Box>
+      </Stack>
+    </Paper>
+  );
+}
+
+export function ForumPostFooter({ thread }) {
+  if (thread.viewCount === undefined && thread.replyCount === undefined) {
+    return <></>;
+  }
+
+  return (
+    <div style={{
+      display: "grid",
+      gridTemplateColumns: "min-content 1.5em min-content 1.5em",
+      alignItems: "center",
+      opacity: "0.75",
+    }}>
+      <Typography variant="body2" sx={{
+        mr: 0.5,
+        textAlign: "right",
+      }}>
+        {thread.viewCount || 0}
+      </Typography>
+      <i className="fas fa-eye" />
+      <Typography variant="body2" sx={{
+        mr: 0.5,
+        textAlign: "right",
+      }}>
+        {thread.replyCount || 0}
+      </Typography>
+      <i className="fas fa-comments" />
+    </div>
+  );
 }
 
 export function VoteWidget(props) {
@@ -317,16 +523,4 @@ export function VoteWidget(props) {
       </Popover>
     </Stack>
   );
-}
-
-export function ViewsAndReplies(props) {
-  const viewCount = props.viewCount;
-  const replyCount = props.replyCount;
-
-  const viewsPlural = viewCount !== 1;
-  const repliesPlural = replyCount !== 1;
-
-  return `${viewCount} view${viewsPlural ? "s" : ""}, ${replyCount} repl${
-    repliesPlural ? "ies" : "y"
-  }`;
 }

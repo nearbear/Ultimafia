@@ -9,7 +9,7 @@ import { useErrorAlert } from "components/Alerts";
 import { Time, filterProfanity } from "components/Basic";
 import { PageNav } from "components/Nav";
 import { TextEditor } from "components/Form";
-import { UserContext } from "Contexts";
+import { ForumContext, UserContext } from "Contexts";
 import { Loading } from "components/Loading";
 import { ThreadPoll } from "components/Poll";
 
@@ -29,6 +29,7 @@ export default function Thread(props) {
   const { threadId } = useParams();
   const location = useLocation();
   const user = useContext(UserContext);
+  const { updateForumNavInfo } = React.useContext(ForumContext);
   const errorAlert = useErrorAlert();
 
   const params = new URLSearchParams(location.search);
@@ -60,7 +61,7 @@ export default function Thread(props) {
         setPage(res.data.page);
         setLoaded(true);
 
-        props.updateForumNavInfo({
+        updateForumNavInfo({
           type: "thread",
           boardId: res.data.board.id,
           boardName: res.data.board.name,
@@ -76,7 +77,7 @@ export default function Thread(props) {
 
   useEffect(() => {
     if (loaded) {
-      props.updateForumNavInfo({
+      updateForumNavInfo({
         action: "boardAndThread",
         boardId: threadInfo.board.id,
         boardName: threadInfo.board.name,

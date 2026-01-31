@@ -12,6 +12,7 @@ import {
   Card,
   CardContent,
   Typography,
+  Paper,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
@@ -94,18 +95,22 @@ export default function Calendar(props) {
   };
 
   return (
-    <FullCalendar
-      plugins={[dayGridPlugin]}
-      initialView="dayGridMonth"
-      timezone="UTC"
-      headerToolbar={{
-        left: "prev,next",
-        center: "title",
-        right: "dayGridWeek,dayGridMonth",
-      }}
-      events={events}
-      eventContent={renderEventContent}
-      eventClick={handleEventClick}
-    />
+    <Paper sx={{
+      p: 2,
+    }}>
+      <FullCalendar
+        plugins={[dayGridPlugin]}
+        initialView="dayGridMonth"
+        timezone="UTC"
+        headerToolbar={{
+          left: "prev,next",
+          center: "title",
+          right: "dayGridWeek,dayGridMonth",
+        }}
+        events={events}
+        eventContent={renderEventContent}
+        eventClick={handleEventClick}
+      />
+    </Paper>
   );
 }

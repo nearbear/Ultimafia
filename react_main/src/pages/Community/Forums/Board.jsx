@@ -6,11 +6,12 @@ import { useErrorAlert } from "../../../components/Alerts";
 import { getPageNavFilterArg, PageNav } from "../../../components/Nav";
 import { NameWithAvatar } from "../../User/User";
 import { Modal } from "../../../components/Modal";
-import { VoteWidget, ViewsAndReplies } from "./Forums";
+import { VoteWidget, ForumPostFooter } from "./Forums";
 import { TextEditor } from "../../../components/Form";
 import { Time } from "../../../components/Basic";
-import { UserContext } from "../../../Contexts";
+import { ForumContext, UserContext } from "../../../Contexts";
 import { Loading } from "../../../components/Loading";
+import { Dialog, Fab, Typography } from "@mui/material";
 
 export default function Board(props) {
   const [boardInfo, setBoardInfo] = useState({});
@@ -24,6 +25,7 @@ export default function Board(props) {
   const [redirect, setRedirect] = useState();
 
   const { boardId } = useParams();
+  const { updateForumNavInfo } = React.useContext(ForumContext);
   const user = useContext(UserContext);
   const errorAlert = useErrorAlert();
 
@@ -40,7 +42,7 @@ export default function Board(props) {
 
         document.title = `${res.data.name} | UltiMafia`;
 
-        props.updateForumNavInfo({
+        updateForumNavInfo({
           type: "board",
           id: boardId,
           name: res.data.name,
@@ -54,7 +56,7 @@ export default function Board(props) {
 
   useEffect(() => {
     if (loaded) {
-      props.updateForumNavInfo({
+      updateForumNavInfo({
         action: "board",
         id: boardInfo.id,
         name: boardInfo.name,
@@ -136,12 +138,7 @@ export default function Board(props) {
             groups={thread.author.groups}
             vanityUrl={thread.author.vanityUrl}
           />
-          <div className="counts">
-            <ViewsAndReplies
-              viewCount={thread.viewCount || 0}
-              replyCount={thread.replyCount || 0}
-            />
-          </div>
+            <ForumPostFooter thread={thread} />
         </div>
         <div className="forum-column">
           <div className="column-title">Post Date</div>
@@ -193,14 +190,13 @@ export default function Board(props) {
           <i className={`fas fa-${boardInfo.icon || "comments"} board-icon`} />
           <div className="board-title">{boardInfo.name}</div>
         </div>
-        <div
-          className="create-thread btn btn-theme"
-          onClick={onCreateThreadClick}
-          disabled={!user.perms.createThread}
-        >
+        <Fab onClick={onCreateThreadClick} disabled={!user.perms.createThread} aria-label="Create Thread" sx={{
+          position: "fixed",
+          bottom: 1,
+          right: 1,
+        }}>
           <i className="fas fa-plus" />
-          Create Thread
-        </div>
+        </Fab>
       </div>
       {pinnedThreads.length > 0 && (
         <div className="threads pinned-threads span-panel">{pinnedThreads}</div>
@@ -332,14 +328,18 @@ function CreateThreadModal(props) {
   }
 
   return (
-    <Modal
-      className="create-thread"
-      show={props.show}
-      onBgClick={onCancel}
-      header={header}
-      content={content}
-      footer={footer}
-    />
+    <Dialog
+      open={props.show}
+      onClose={onCancel}
+    >
+      <Typography variant="h3" className="mui-popover-title" sx={{
+        p: 1,
+      }}>
+        {header}
+      </Typography>
+      <div className="modal-content">{content}</div>
+      <div className="modal-footer">{footer}</div>
+    </Dialog>
   );
 }
 

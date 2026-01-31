@@ -12,6 +12,7 @@ import { generateContrastLookup, autoContrastColor } from "utilsFolder/autoContr
 export const UserContext = React.createContext();
 export const SiteInfoContext = React.createContext();
 export const GameContext = React.createContext();
+export const ForumContext = React.createContext();
 
 export function UserProvider({
   children,

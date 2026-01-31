@@ -35,7 +35,7 @@ router.get("/categories", async function (req, res) {
           },
           {
             path: "recentReplies",
-            select: "id author thread postDate -_id",
+            select: "id author thread postDate content -_id",
             populate: [
               {
                 path: "author",

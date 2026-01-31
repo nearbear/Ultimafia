@@ -5,17 +5,27 @@ import { Link } from "react-router-dom";
 import { NameWithAvatar } from "../../User/User";
 import { Time } from "../../../components/Basic";
 import { useErrorAlert } from "../../../components/Alerts";
-import { ViewsAndReplies } from "./Forums";
+import { ForumCard, ForumColumn, ForumPost } from "./Forums";
 import { Loading } from "../../../components/Loading";
+import {
+  Divider,
+  Link as MuiLink,
+  Paper,
+  Stack,
+  Typography
+} from "@mui/material";
+import { ForumContext } from "Contexts";
 
 export default function Categories(props) {
   const [categoryInfo, setCategoryInfo] = useState([]);
   const [loaded, setLoaded] = useState(false);
+
+  const { updateForumNavInfo } = React.useContext(ForumContext);
   const errorAlert = useErrorAlert();
 
   useEffect(() => {
     document.title = "Categories | UltiMafia";
-    props.updateForumNavInfo({ action: "home" });
+    updateForumNavInfo({ type: "home" });
 
     axios
       .get("/api/forums/categories")
@@ -28,9 +38,7 @@ export default function Categories(props) {
         setCategoryInfo(categories);
         setLoaded(true);
 
-        props.updateForumNavInfo({
-          type: "home",
-        });
+        updateForumNavInfo({ type: "home" });
       })
       .catch(errorAlert);
   }, []);
@@ -42,96 +50,64 @@ export default function Categories(props) {
   const categories = categoryInfo.map((category) => {
     const boards = category.boards.map((board) => {
       const newestThreads = board.newestThreads.map((thread) => (
-        <div className="column-item" key={thread.id}>
-          <div className="thread-link-wrapper">
-            <Link to={`/community/forums/thread/${thread.id}`}>
-              {thread.title}
-            </Link>
-          </div>
-          <NameWithAvatar
-            small
-            id={thread.author.id}
-            name={thread.author.name}
-            avatar={thread.author.avatar}
-            vanityUrl={thread.author.vanityUrl}
-          />
-          <div className="thread-counts">
-            <ViewsAndReplies
-              viewCount={thread.viewCount || 0}
-              replyCount={thread.replyCount || 0}
-            />
-          </div>
-        </div>
+        <ForumPost thread={thread} key={thread.id} />
       ));
 
       const recentReplies = board.recentReplies.map((reply) => (
-        <div className="column-item" key={reply.id}>
-          <div className="thread-link-wrapper">
-            <Link
-              to={`/community/forums/thread/${reply.thread.id}?reply=${reply.id}`}
-            >
-              {reply.thread.title}
-            </Link>
-          </div>
-          <NameWithAvatar
-            small
-            id={reply.author.id}
-            name={reply.author.name}
-            avatar={reply.author.avatar}
-            vanityUrl={reply.author.vanityUrl}
-          />
-          <div className="reply-age">
-            <Time millisec={Date.now() - reply.postDate} />
-            {` ago`}
-          </div>
-        </div>
+        <ForumPost thread={reply} key={reply.id} />
       ));
 
       return (
-        <div className="board" key={board.id}>
-          <i className={`fas fa-${board.icon || "comments"} board-icon`} />
-          <Link
-            className="board-info"
-            to={`/community/forums/board/${board.id}`}
-          >
-            <div className="board-name">{board.name}</div>
-            <div className="board-desc">{board.description}</div>
-          </Link>
-          <div className="forum-column tall">
-            <div className="column-title">Newest Thread</div>
-            <div
-              className={`column-content ${
-                newestThreads.length === 0 ? "center-content" : ""
-              }`}
-            >
+        <ForumCard className="board" to={`/community/forums/board/${board.id}`} key={board.id}
+          actionContent={
+            <Stack direction="row" spacing={1} sx={{
+              height: "100%",
+              alignItems: "center",
+            }}>
+              <i className={`fas fa-${board.icon || "comments"} board-icon`} />
+              <Stack direction="column" sx={{
+                height: "100%",
+                justifyContent: "center",
+              }}>
+
+                <Typography variant="h3">
+                  {board.name}
+                </Typography>
+                <Typography variant="caption">
+                  {board.description}
+                </Typography>
+              </Stack>
+            </Stack>
+          }
+          middleContent={
+            <ForumColumn title="Newest Thread">
               {newestThreads.length === 0 && (
-                <div className="column-item center-item">No threads yet</div>
+                <Typography sx={{ textAlign: "center" }}>
+                  No threads yet
+                </Typography>
               )}
               {newestThreads}
-            </div>
-          </div>
-          <div className="forum-column tall three">
-            <div className="column-title">Recent Replies</div>
-            <div
-              className={`column-content ${
-                recentReplies.length === 0 ? "center-content" : ""
-              }`}
-            >
-              {recentReplies.length === 0 && (
-                <div className="column-item center-item">No replies yet</div>
-              )}
-              {recentReplies}
-            </div>
-          </div>
-        </div>
+            </ForumColumn>
+          }
+          recentReplies={recentReplies}
+        />
       );
     });
 
     return (
-      <div className="span-panel forum-category" key={category.id}>
-        <div className="title">{category.name}</div>
-        <div className="boards">{boards}</div>
-      </div>
+      <Paper elevation={2} className="forum-category" key={category.id} sx={{
+        p: 2,
+      }}>
+        <Typography variant="h2" sx={{
+          mb: 2,
+          textAlign: "center",
+        }}>
+          {category.name}
+        </Typography>
+        <Stack direction="column" spacing={1} className="boards" divider={<Divider orientation="horizontal" flexItem />}>
+          {boards}
+        </Stack>
+      </Paper>
     );
   });
 

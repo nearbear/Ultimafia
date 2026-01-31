@@ -16,6 +16,7 @@ import {
   FormControl,
   InputLabel,
   IconButton,
+  Paper,
 } from "@mui/material";
 
 import { useErrorAlert } from "components/Alerts";
@@ -550,7 +551,7 @@ export default function Moderation() {
 
   return (
     <>
-      <Box sx={{ p: 1 }}>
+      <Paper sx={{ p: 2 }}>
         <Typography variant="h2" sx={{ mb: 1 }}>
           Mission Statement
         </Typography>
@@ -563,7 +564,7 @@ export default function Moderation() {
           orientation, skin color, ability, religion, nationality, or any other
           characteristic.{" "}
         </Typography>
-      </Box>
+      </Paper>
       <Grid container rowSpacing={1} columnSpacing={1} className="moderation">
         <Grid item xs={12} key={"mission-statement"}></Grid>
         <Grid item xs={12} md={8} key={"execute-action"}>

@@ -7,13 +7,45 @@ import { getPageNavFilterArg, PageNav } from "../../components/Nav";
 import { Time } from "../../components/Basic";
 import {
   Box,
-  Grid,
+  Grid2,
   TextField,
   Card,
   CardContent,
   Typography,
+  Paper,
+  Stack,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
+import { useIsPhoneDevice } from "hooks/useIsPhoneDevice";
+
+function UserCard({ user }) {
+  return (
+    <Paper variant="outlined" sx={{
+      p: 1,
+    }}>
+      <Stack direction="row" spacing={1} alignItems="center">
+        <Box sx={{
+          flexGrow: 1,
+          overflow: "hidden",
+        }}>
+          <NameWithAvatar
+            id={user.id}
+            name={user.name}
+            avatar={user.avatar}
+            vanityUrl={user.vanityUrl}
+            subContent={
+              <Typography variant="caption">
+                {"last online "}
+                <Time abbreviate minSec millisec={Date.now() - user.lastActive} suffix=" ago" />
+              </Typography>
+            }
+          />
+        </Box>
+        <StatusIcon status={user.status} />
+      </Stack>
+    </Paper>
+  );
+}
 
 export default function UserSearch(props) {
   const theme = useTheme();
@@ -21,6 +53,7 @@ export default function UserSearch(props) {
   const [searchVal, setSearchVal] = useState("");
 
   const user = useContext(UserContext);
+  const isPhoneDevice = useIsPhoneDevice();
 
   useEffect(() => {
     document.title = "Users | UltiMafia";
@@ -44,41 +77,16 @@ export default function UserSearch(props) {
     }
   }, [searchVal]);
 
-  const users = userList.map((user) => (
-    <Card
-      key={user.id}
-      className="user-cell"
-      variant="outlined"
-      sx={{ margin: 1 }}
-    >
-      <CardContent
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "flex-start",
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", width: "100%" }}>
-          <NameWithAvatar
-            id={user.id}
-            name={user.name}
-            avatar={user.avatar}
-            vanityUrl={user.vanityUrl}
-          />
-          <Box sx={{ width: "8px" }} />
-          <StatusIcon status={user.status} />
-        </Box>
-        <Typography variant="caption" sx={{ marginTop: "4px" }}>
-          {/*<Time minSec millisec={Date.now() - user.lastActive} suffix=" ago" />*/}
-        </Typography>
-      </CardContent>
-    </Card>
+  const users = [...userList, ...userList, ...userList, ...userList].map((user) => (
+    <UserCard key={user.id} user={user} />
   ));
 
   return (
-    <Box display="flex" flexDirection="row" padding={2}>
-      <Grid container spacing={2}>
-        <Grid item xs={12} md={9}>
+    <Grid2 container spacing={2}>
+      <Grid2 size={{ xs: 12, md: 8 }}>
+        <Paper sx={{
+          p: 2,
+        }}>
           <TextField
             fullWidth
             label="🔎 Username"
@@ -87,23 +95,22 @@ export default function UserSearch(props) {
             onChange={(e) => setSearchVal(e.target.value)}
             sx={{ marginBottom: 2 }}
           />
-          <Box
-            sx={{
-              overflowY: "auto",
-              flexGrow: 1,
-              display: "flex",
-              flexWrap: "wrap",
-            }}
-          >
+          <Box sx={{
+            display: "grid",
+            gridTemplateColumns: isPhoneDevice ? "1fr" : "repeat(3, minmax(0, 1fr))",
+            gap: 2,
+          }}>
             {users}
           </Box>
-        </Grid>
-        <Grid item xs={12} md={3}>
+        </Paper>
+      </Grid2>
+      <Grid2 size={{ xs: 12, md: 4 }}>
+        <Stack direction="column" spacing={2}>
           <NewestUsers />
           {user.perms.viewFlagged && <FlaggedUsers />}
-        </Grid>
-      </Grid>
-    </Box>
+        </Stack>
+      </Grid2>
+    </Grid2>
   );
 }
 
@@ -140,37 +147,25 @@ function NewestUsers(props) {
   }
 
   const userRows = users.map((user) => (
-    <Card
-      key={user.id}
-      className="user-row"
-      variant="outlined"
-      sx={{ marginBottom: 2 }}
-    >
-      <CardContent sx={{ display: "flex", flexDirection: "column" }}>
-        <NameWithAvatar
-          id={user.id}
-          name={user.name}
-          avatar={user.avatar}
-          vanityUrl={user.vanityUrl}
-        />
-        <Typography variant="caption" sx={{ marginTop: "4px" }}>
-          <Time minSec millisec={Date.now() - user.joined} suffix=" ago" />
-        </Typography>
-      </CardContent>
-    </Card>
+    <UserCard key={user.id} user={user} />
   ));
 
   return (
-    <Box className="newest-users box-panel">
-      <Typography variant="h4" className="heading">
-        Newest Users
-      </Typography>
-      <Box className="users-list">
+    <Paper sx={{
+      p: 2,
+    }}>
+      <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+        <Typography variant="h3" sx={{
+          mr: "auto !important",
+        }}>
+          Newest Users
+        </Typography>
         <PageNav page={page} onNav={onPageNav} inverted />
+      </Stack>
+      <Stack direction="column" spacing={1}>
         {userRows}
-        <PageNav page={page} onNav={onPageNav} inverted />
-      </Box>
-    </Box>
+      </Stack>
+    </Paper>
   );
 }
 
@@ -201,36 +196,22 @@ function FlaggedUsers(props) {
   }
 
   const userRows = users.map((user) => (
-    <Card
-      key={user.id}
-      className="user-row"
-      variant="outlined"
-      sx={{ marginBottom: 2 }}
-    >
-      <CardContent sx={{ display: "flex", flexDirection: "column" }}>
-        <NameWithAvatar
-          id={user.id}
-          name={user.name}
-          avatar={user.avatar}
-          vanityUrl={user.vanityUrl}
-        />
-        <Typography variant="caption" sx={{ marginTop: "4px" }}>
-          <Time minSec millisec={Date.now() - user.joined} suffix=" ago" />
-        </Typography>
-      </CardContent>
-    </Card>
+    <UserCard key={user.id} user={user} />
   ));
 
   return (
-    <Box className="flagged-users box-panel">
-      <Typography variant="h4" className="heading">
-        Flagged Users
-      </Typography>
-      <Box className="users-list">
+    <Paper sx={{
+      p: 2,
+    }}>
+      <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+        <Typography variant="h3" sx={{
+          mr: "auto !important",
+        }}>
+          Flagged Users
+        </Typography>
         <PageNav page={page} onNav={onPageNav} inverted />
-        {userRows}
-        <PageNav page={page} onNav={onPageNav} inverted />
-      </Box>
-    </Box>
+      </Stack>
+      {userRows}
+    </Paper>
   );
 }
