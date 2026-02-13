@@ -6,7 +6,7 @@ function getStorageKey(gameType) {
 
 // increment a number here to force people's hosting preferences to be reset one time only for that game type
 const HOST_OPTIONS_VERSIONS = {
-  Mafia: 2,
+  Mafia: 3,
   Acrotopia: 1,
   Jotto: 1,
   "Liars Dice": 1,
@@ -60,6 +60,7 @@ const commonHostOptions = {
 var defaultOptions = {
   Mafia: existingHostOptions["Mafia"] || {
     ...commonHostOptions,
+    readyCheck: true,
     ranked: false,
     competitive: false,
     advancedHosting: false,
@@ -187,4 +188,28 @@ export function persistDefaults(gameType, defaults) {
   const storageKey = getStorageKey(gameType);
   defaults.hostOptionsVersion = HOST_OPTIONS_VERSIONS[gameType];
   localStorage.setItem(storageKey, JSON.stringify(defaults));
+}
+
+export function sortInitialFormFields(initialFormFields) {
+  const order = {
+    lobby: 0,
+    lobbyName: 1,
+    private: 2,
+    guests: 3,
+    spectating: 4,
+    readyCheck: 5,
+    scheduled: 6,
+    startDate: 7,
+    configureDuration: Number.MAX_VALUE - 100,
+    dayLength: Number.MAX_VALUE - 99,
+    nightLength: Number.MAX_VALUE - 98,
+    pregameWaitLength: Number.MAX_VALUE - 97,
+    extendLength: Number.MAX_VALUE - 96,
+  };
+
+  initialFormFields.sort(function (a, b) {
+    const aOrder = order[a.ref] !== undefined ? order[a.ref] : Number.MAX_VALUE - 500;
+    const bOrder = order[b.ref] !== undefined ? order[b.ref] : Number.MAX_VALUE - 500;
+    return aOrder - bOrder;
+  });
 }

@@ -118,6 +118,7 @@ export default function MafiaGame() {
       volumes: 1,
     },
     { fileName: "music/NightMafia", loops: true, overrides: false, volumes: 1 },
+    { fileName: "music/NightCult", loops: true, overrides: false, volumes: 1 },
     {
       fileName: "music/NightProtector",
       loops: true,
@@ -155,6 +156,12 @@ export default function MafiaGame() {
       volumes: 0.6,
     },
     {
+      fileName: "music/NightWarlock",
+      loops: true,
+      overrides: false,
+      volumes: 0.6,
+    },
+    {
       fileName: "music/NightClockmaker",
       loops: true,
       overrides: false,
@@ -162,6 +169,12 @@ export default function MafiaGame() {
     },
     {
       fileName: "music/NightPyromaniac",
+      loops: true,
+      overrides: false,
+      volumes: 1,
+    },
+    {
+      fileName: "music/NightBird",
       loops: true,
       overrides: false,
       volumes: 1,
@@ -343,7 +356,6 @@ export default function MafiaGame() {
           case "Chandler":
           case "Cutler":
           case "Demolitionist":
-          case "Falconer":
           case "Funsmith":
           case "Gemcutter":
           case "Gunsmith":
@@ -408,7 +420,6 @@ export default function MafiaGame() {
             game.playAudio("music/NightHostile");
             break;
           case "Clown":
-          case "Dodo":
           case "Fool":
           case "Trickster":
           case "Prankster":
@@ -419,6 +430,9 @@ export default function MafiaGame() {
             break;
           case "Siren":
             game.playAudio("music/NightSiren");
+            break;
+          case "Warlock":
+            game.playAudio("music/NightWarlock");
             break;
           case "Suitress":
           case "Mistress":
@@ -453,11 +467,24 @@ export default function MafiaGame() {
           case "Fatalist":
             game.playAudio("music/NightMystical");
             break;
+          case "Egg":
+          case "Dodo":
+          case "Turkey":
+          case "Tofurkey":
+          case "Harpy":
+          case "Falconer":
+            game.playAudio("music/NightBird");
+            break;
           default:
             if (currentAlignment === "Mafia") {
               // If mafia role isn't listed above the mafia track plays
               game.playAudio("music/NightMafia");
-            } else {
+            }
+            else if (currentAlignment === "Cult") {
+              // If cult role isn't listed above the mafia track plays
+              game.playAudio("music/NightCult");
+            }
+            else {
               // If no role has assigned music the generic track plays
               game.playAudio("music/NightGeneric");
             }

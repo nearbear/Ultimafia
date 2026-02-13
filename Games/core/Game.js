@@ -5,7 +5,6 @@ const Message = require("./Message");
 const History = require("./History");
 const Queue = require("./Queue");
 const PregameMeeting = require("./PregameMeeting");
-const PregameReadyMeeting = require("./PregameReadyMeeting");
 const SpectatorMeeting = require("./SpectatorMeeting");
 const Timer = require("./Timer");
 const Random = require("../../lib/Random");
@@ -138,6 +137,9 @@ module.exports = class Game {
 
     this.numHostInGame = 0;
     this.originalHostId = options.hostId; // Track the original host for reassignment
+
+    this.isReadyCheckActive = false;
+    this.readyPlayers = {};
   }
 
   async init() {
@@ -897,6 +899,13 @@ module.exports = class Game {
 
     if (player.user.dev && !player.isBot) player.send("dev");
 
+    if (this.isReadyCheckActive) {
+        player.send("readyCheck init", {
+            endTime: Date.now() + this.getTimeLeft("pregameCountdown"),
+            readyPlayers: Object.keys(this.readyPlayers)
+        });
+    }
+
     this.sendTimersToPlayer(player);
     this.syncPlayerTimers(player);
   }
@@ -941,13 +950,13 @@ module.exports = class Game {
   }
 
   startReadyCheck() {
-    this.readyMeeting = this.createMeeting(PregameReadyMeeting);
+    this.isReadyCheckActive = true;
+    this.readyPlayers = {};
 
-    for (let player of this.players) this.readyMeeting.join(player);
-
-    this.readyMeeting.init();
-
-    for (let player of this.players) player.sendMeeting(this.readyMeeting);
+    this.broadcast("readyCheck init", {
+        endTime: Date.now() + this.readyCountdownLength,
+        readyPlayers: []
+    });
 
     this.createTimer("pregameCountdown", this.readyCountdownLength, () =>
       this.failReadyCheck()
@@ -957,21 +966,51 @@ module.exports = class Game {
 
   cancelReadyCheck() {
     this.clearTimer("pregameCountdown");
+    this.isReadyCheckActive = false;
+    this.readyPlayers = {};
+    
+    this.broadcast("readyCheck cancel", {});
+  }
 
-    if (this.readyMeeting) this.readyMeeting.cancel();
+  playerReady(player) {
+    if (!this.isReadyCheckActive) return;
+    if (this.readyPlayers[player.id]) return;
+
+    this.readyPlayers[player.id] = true;
+
+    this.sendAlert(`${player.name} is ready.`, undefined, undefined, ["info"]);
+    this.broadcast("readyCheck update", { playerId: player.id });
+    this.checkAllPlayersReady();
+  }
+
+  checkAllPlayersReady() {
+    if (!this.isReadyCheckActive) return;
+
+    for (let player of this.players) {
+      if (!this.readyPlayers[player.id]) return;
+    }
+
+    this.isReadyCheckActive = false;
+    this.startPregameCountdown();
+    this.sendAlert("Everyone is ready, starting the game!");
   }
 
   failReadyCheck() {
-    for (let member of this.readyMeeting.members) {
-      if (!member.ready) {
-        this.kickPlayer(member.player);
-        this.sendAlert(
-          `${member.player.name} was kicked for inactivity.`,
-          undefined,
-          undefined,
-          ["info"]
-        );
+    const playersToKick = [];
+    for (let player of this.players) {
+      if (!this.readyPlayers[player.id]) {
+          playersToKick.push(player);
       }
+    }
+
+    for (let player of playersToKick) {
+        this.kickPlayer(player);
+        this.sendAlert(
+            `${player.name} was kicked for inactivity.`,
+            undefined,
+            undefined,
+            ["info"]
+        );
     }
 
     this.cancelReadyCheck();
@@ -979,6 +1018,8 @@ module.exports = class Game {
 
   startPregameCountdown() {
     this.clearTimer("pregameCountdown");
+    this.broadcast("readyCheck success", {}); 
+    
     this.createTimer("pregameCountdown", this.pregameCountdownLength, () =>
       this.start()
     );
@@ -2643,6 +2684,13 @@ module.exports = class Game {
     return false;
   }
 
+    isPostConvertDeathReveals() {
+    if (this.getGameSetting("Sensible Death Reveals")) {
+      return true;
+    }
+    return false;
+  }
+
   isLastWills() {
     if (this.getGameSetting("Last Wills")) {
       return true;
@@ -3102,25 +3150,32 @@ module.exports = class Game {
         }
       });
 
-      // In most cases the faction winner fraction will be either 0 or 1
-      // In edge cases, such as members of a faction being converted then losing to their starting faction, this number will be somewhere in between
-      const factionScores = factionNames.map((factionName) => {
-        const factionWinnerFraction = factionWinnerFractions[factionName];
-        return Math.floor(
-          1,
-          factionWinnerFraction.winnerCount /
-            factionWinnerFraction.originalCount
-        );
-      });
+      // In most cases the stillAlignedPercent will be either 0 or 1
+      // In edge cases, such as members of a faction being converted then losing to their starting faction,
+      // this number will be somewhere in between
+      const factionScores = new Map(
+        factionNames.map((factionName) => {
+          const factionWinnerFraction = factionWinnerFractions[factionName];
+          const stillAlignedPercent = factionWinnerFraction.winnerCount / factionWinnerFraction.originalCount;
+          return [
+            factionName,
+            stillAlignedPercent,
+          ];
+        })
+      );
+
+      // the 1e-6 is to avoid zero scores which openskill refuses to consider a draw
+      const factionScoresRaw = factionNames.map((factionName) =>
+        Math.floor(1, factionScores.get(factionName)+1e-6)
+      );
 
       // library code time
       const options = {
         model: bradleyTerryFull,
-        beta: constants.defaultSkillRatingSigma * 4,
       };
       const predictions = predictWin(factionsToBeRated, options);
       const ratedFactions = rate(factionsToBeRated, {
-        score: factionScores,
+        score: factionScoresRaw,
         ...options,
       });
 
@@ -3153,10 +3208,10 @@ module.exports = class Game {
         const newSkillRating = ratedFactions[i];
 
         pointsWonByFactions[factionName] = Math.round(
-          constants.pointsNominalAmount / 2 / winPredictionPercent
+          factionScores.get(factionName) * constants.pointsNominalAmount / 2 / winPredictionPercent
         );
         pointsLostByFactions[factionName] = Math.round(
-          constants.pointsNominalAmount / 2 / (1 - winPredictionPercent)
+          factionScores.get(factionName) * constants.pointsNominalAmount / 2 / (1 - winPredictionPercent)
         );
 
         newFactionSkillRatings.push({
